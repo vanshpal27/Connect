@@ -1,0 +1,113 @@
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: connection-db
+# spec:
+#   selector:
+#     matchLabels:
+#       app: myapp
+#   serviceName: connection-db
+#   replicas: 1 
+#   template:
+#     metadata:
+#       labels:
+#         app: myapp
+#     spec:
+#       containers:
+#       - name: notification-db
+#         image: neo4j
+#         resources:
+#             requests:
+#               memory: "256Mi"
+#               cpu: "250m"
+#             limits:
+#               memory: "512Mi"
+#               cpu: "500m"
+#         env:
+#           - name: NEO_4JAUTH
+#             value: neo4j/password
+          
+#         ports:
+#         - containerPort: 7687
+#         volumeMounts:
+#         - name: data
+#           mountPath: /data
+#   volumeClaimTemplates:
+#   - metadata:
+#       name: data
+#     spec:
+#       accessModes: [ "ReadWriteOnce" ]
+#       resources:
+#         requests:
+#           storage: 1Gi
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: connection-db
+# spec:
+#   clusterIP: None
+#   selector:
+#     app: myapp
+#   ports:
+#   - port: 7687
+#     targetPort: 7687
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: connection-db
+spec:
+  serviceName: connection-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connection-db
+  template:
+    metadata:
+      labels:
+        app: connection-db
+    spec:
+      containers:
+      - name: connection-db
+        image: neo4j:latest
+        ports:
+        - containerPort: 7687
+        env:
+          - name: NEO4J_AUTH
+            value: neo4j/password
+          - name: NEO4J_server_memory_heap_initial__size
+            value: 256m
+          - name: NEO4J_server_memory_heap_max__size
+            value: 256m
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connection-db
+spec:
+  clusterIP: None
+  selector:
+    app: connection-db
+  ports:
+  - port: 7687
+    targetPort: 7687

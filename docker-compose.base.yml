@@ -1,0 +1,43 @@
+version: "3.8"
+services:
+  api-gateway:
+    image: vanshpal27/connect/api-gateway
+    container_name: api-gatway
+    networks:
+      - connect
+    ports:
+      - "9090:9090"
+    depends_on:
+      - discovery-service
+  connection-db:
+    image: neo4j
+    container_name: neo4j
+    environment:
+      - NEO_4JAUTH=neo4j/password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4jdb:/data
+    networks:
+      - connect
+  connections-service:
+    image: vanshpal27/connect/connections-service
+    container_name: connections-service
+    networks:
+      - connect
+    depends_on:
+      - discovery-service
+      - connection-db
+  discovery-service:
+    image: vanshpal27/connect/discovery-server
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    networks:
+      - connect
+volumes:
+  neo4jdb:
+
+networks:
+  connect:

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: post-db
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  serviceName: post-db
+  replicas: 1
+  template:
+    metadata:
+      labels: 
+        app: myapp
+    spec:
+      containers:
+      - name: post-db
+        image: postgres:16
+        resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+        env:
+          - name: POSTGRES_USER
+            value: postgres
+          - name: POSTGRES_PASSWORD
+            value: "123456"
+          - name: POSTGRES_DB
+            value: postservice
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: post-db
+spec:
+  clusterIP: None
+  selector:
+    app: myapp
+  ports:
+  - port: 5432
+    targetPort: 5432

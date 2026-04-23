@@ -1,0 +1,39 @@
+
+spring:
+  application:
+    name: api-gateway
+  secrete:
+     key: "fsjngfjdfngksndfjsbndgkjnsdfbskjgbsjfksjbgkjsnfgkjsbngkkbkgdbkbgdfgkjfbgkjdfbgkjdbgkjs"
+  cloud:
+    gateway:
+      routes:
+        - id: users-service
+                #service name of deploy  # eureka registed name
+          uri: ${USER_SERVICE_URL:lb://USERS-SERVICE}
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - StripPrefix=2
+
+        - id: posts-service
+          uri: ${POSTS_SERVICE_URL:lb://POSTS-SERVICE}
+          predicates:
+            - Path=/api/v1/posts/**
+          filters:
+            - StripPrefix=2
+            - name: Authentication
+
+        - id: connections-service
+          uri: ${CONNECTIONS_SERVICE_URL:lb://CONNECTIONS-SERVICE}
+          predicates:
+            - Path=/api/v1/connections/**
+          filters:
+            - StripPrefix=2
+            - name: Authentication
+
+
+server:
+  port: 9090
+
+eureka.client.service-url.defaultZone: http://discovery-service:8761/eureka/
+

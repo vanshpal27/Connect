@@ -1,0 +1,77 @@
+version: "3.8"
+services:
+
+  notification-db:
+    image: postgres
+    container_name: notificationdb
+    environment:
+      - POSTGRES_DB=notificationservice
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+    volumes:
+      - notificationdb:/var/lib/postgresql
+
+
+    networks:
+      - connect
+  kafka:
+    image: confluentinc/cp-kafka:7.9.1
+    hostname: broker
+    container_name: kafka
+
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+
+      # ✅ Correct host-based and container-based listeners
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://broker:9092'
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+      KAFKA_JMX_PORT: 9101
+
+      # ✅ never use localhost inside docker
+      KAFKA_JMX_HOSTNAME: broker
+
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+
+      # ✅ log directory
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+
+      # must be unique
+      CLUSTER_ID: 'JF0s1nlETWSE2RUFSfCQ3g'
+  notifications-service:
+    image: vanshpal27/connect/notifications-service
+    container_name: notifications-service
+    networks:
+      - connect
+    depends_on:
+      - notification-db
+      - kafka
+  kafbat-ui:
+    container_name: kafbat-ui
+    image: kafbat/kafka-ui
+    ports:
+      - 8090:8080
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTER_0_NAME: local
+      KAFKA_CLUSTER_0_BOOTSTRAPSERVER: kafka:9092
+      KAFKA_CLUSTER_0_KSQLDBSERVER: http://ksqldb0:8088
+networks:
+   connect:
+volumes:
+  notificationdb:
+  kafka:

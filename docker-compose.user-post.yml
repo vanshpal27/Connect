@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  user-db:
+    image: postgres
+    container_name: userdb
+    environment:
+      - POSTGRES_DB=userservice
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+    volumes:
+      - userdb:/var/lib/postgresql
+    networks:
+      - connect
+  post-db:
+    image: postgres
+    container_name: postdb
+    environment:
+      - POSTGRES_DB=postservice
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+    volumes:
+      - postdb:/var/lib/postgresql
+    networks:
+      - connect
+  users-service:
+    image: vanshpal27/connect/users-service
+    container_name: users-service
+    networks:
+      - connect
+    depends_on:
+      - user-db
+  posts-service:
+    image: vanshpal27/connect/posts-service
+    container_name: posts-service
+    networks:
+      - connect
+    depends_on:
+      - postdb
+networks:
+  user-db:
+  post-db:
+
+volumes:
+  connect:
